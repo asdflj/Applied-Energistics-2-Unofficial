@@ -10,6 +10,8 @@
 
 package appeng.client.me;
 
+import static net.minecraft.client.gui.GuiScreen.isShiftKeyDown;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 
 import net.minecraft.item.ItemStack;
+
+import org.lwjgl.input.Keyboard;
 
 import appeng.api.AEApi;
 import appeng.api.config.SearchBoxMode;
@@ -47,8 +51,10 @@ public class ItemRepo implements IDisplayRepo {
     private final IItemList<IAEItemStack> list = AEApi.instance().storage().createItemList();
     private final ArrayList<IAEItemStack> view = new ArrayList<>();
     private final ArrayList<ItemStack> dsp = new ArrayList<>();
+    private final ArrayList<IAEItemStack> cache = new ArrayList<>();
     private final IScrollSource src;
     private final ISortSource sortSrc;
+    private boolean hasShiftKeyDown = false;
 
     private int rowSize = 9;
 
@@ -85,11 +91,12 @@ public class ItemRepo implements IDisplayRepo {
     @Override
     public void postUpdate(final IAEItemStack is) {
         final IAEItemStack st = this.list.findPrecise(is);
-
+        hasShiftKeyDown = isShiftKeyDown();
         if (st != null) {
             st.reset();
             st.add(is);
         } else {
+            if (isShiftKeyDown()) this.cache.add(is);
             this.list.add(is);
         }
     }
@@ -102,7 +109,7 @@ public class ItemRepo implements IDisplayRepo {
 
     @Override
     public void updateView() {
-        this.view.clear();
+        if (!isShiftKeyDown()) this.view.clear();
         this.dsp.clear();
 
         this.view.ensureCapacity(this.list.size());
@@ -144,7 +151,7 @@ public class ItemRepo implements IDisplayRepo {
         IItemDisplayRegistry registry = AEApi.instance().registries().itemDisplay();
 
         boolean notDone = false;
-        out: for (IAEItemStack is : this.list) {
+        out: for (IAEItemStack is : isShiftKeyDown() ? this.cache : this.list) {
             // filter AEStack type
             IAEItemStack finalIs = is;
             if (registry.isBlacklisted(finalIs.getItem()) || registry.isBlacklisted(finalIs.getItem().getClass())) {
@@ -207,23 +214,25 @@ public class ItemRepo implements IDisplayRepo {
              * view.add( is ); notDone = false; } }
              */
         }
+        if (!isShiftKeyDown()) {
+            final Enum SortBy = this.sortSrc.getSortBy();
+            final Enum SortDir = this.sortSrc.getSortDir();
 
-        final Enum SortBy = this.sortSrc.getSortBy();
-        final Enum SortDir = this.sortSrc.getSortDir();
+            ItemSorters.setDirection((appeng.api.config.SortDir) SortDir);
+            ItemSorters.init();
 
-        ItemSorters.setDirection((appeng.api.config.SortDir) SortDir);
-        ItemSorters.init();
-
-        if (SortBy == SortOrder.MOD) {
-            this.view.sort(ItemSorters.CONFIG_BASED_SORT_BY_MOD);
-        } else if (SortBy == SortOrder.AMOUNT) {
-            this.view.sort(ItemSorters.CONFIG_BASED_SORT_BY_SIZE);
-        } else if (SortBy == SortOrder.INVTWEAKS) {
-            this.view.sort(ItemSorters.CONFIG_BASED_SORT_BY_INV_TWEAKS);
+            if (SortBy == SortOrder.MOD) {
+                this.view.sort(ItemSorters.CONFIG_BASED_SORT_BY_MOD);
+            } else if (SortBy == SortOrder.AMOUNT) {
+                this.view.sort(ItemSorters.CONFIG_BASED_SORT_BY_SIZE);
+            } else if (SortBy == SortOrder.INVTWEAKS) {
+                this.view.sort(ItemSorters.CONFIG_BASED_SORT_BY_INV_TWEAKS);
+            } else {
+                this.view.sort(ItemSorters.CONFIG_BASED_SORT_BY_NAME);
+            }
         } else {
-            this.view.sort(ItemSorters.CONFIG_BASED_SORT_BY_NAME);
+            this.cache.clear();
         }
-
         for (final IAEItemStack is : this.view) {
             this.dsp.add(is.getItemStack());
         }
@@ -261,6 +270,10 @@ public class ItemRepo implements IDisplayRepo {
 
     @Override
     public boolean hasPower() {
+        if (hasShiftKeyDown && !Keyboard.getEventKeyState()) {
+            hasShiftKeyDown = false;
+            this.updateView();
+        }
         return this.hasPower;
     }
 
