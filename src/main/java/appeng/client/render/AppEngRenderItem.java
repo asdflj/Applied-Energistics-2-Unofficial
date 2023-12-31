@@ -19,12 +19,14 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.storage.IItemDisplayRegistry.ItemRenderHook;
 import appeng.api.storage.data.IAEItemStack;
+import appeng.client.me.SlotME;
 import appeng.core.AEConfig;
 import appeng.core.localization.GuiText;
 import appeng.util.ISlimReadableNumberConverter;
@@ -43,11 +45,19 @@ public class AppEngRenderItem extends RenderItem {
     private static final IWideReadableNumberConverter WIDE_CONVERTER = ReadableNumberConverter.INSTANCE;
 
     private IAEItemStack aeStack = null;
+    private Slot slot = null;
 
     /**
      * Post render hooks. All are called.
      */
     public static List<ItemRenderHook> POST_HOOKS = new ArrayList<>();
+
+    public void renderItemOverlayIntoGUI(final FontRenderer fontRenderer, final TextureManager textureManager,
+            final ItemStack is, final int par4, final int par5, final String par6Str, Slot slotIn) {
+        this.slot = slotIn;
+        this.renderItemOverlayIntoGUI(fontRenderer, textureManager, is, par4, par5, par6Str);
+
+    }
 
     @Override
     public void renderItemOverlayIntoGUI(final FontRenderer fontRenderer, final TextureManager textureManager,
@@ -97,7 +107,7 @@ public class AppEngRenderItem extends RenderItem {
                 GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
             }
 
-            if (is.stackSize == 0 && showCraftLabelText) {
+            if (is.stackSize == 0 && showCraftLabelText && aeStack != null && aeStack.isCraftable()) {
                 final String craftLabelText = AEConfig.instance.useTerminalUseLargeFont()
                         ? GuiText.LargeFontCraft.getLocal()
                         : GuiText.SmallFontCraft.getLocal();
@@ -118,7 +128,9 @@ public class AppEngRenderItem extends RenderItem {
 
             final long amount = this.aeStack != null ? this.aeStack.getStackSize() : is.stackSize;
 
-            if (amount != 0 && showStackSize) {
+            if ((amount != 0 && showStackSize) || (slot != null && slot instanceof SlotME
+                    && ((SlotME) slot).getAEStack() != null
+                    && !((SlotME) slot).getAEStack().isCraftable())) {
                 final String stackSize = this.getToBeRenderedStackSize(amount);
 
                 GL11.glDisable(GL11.GL_LIGHTING);
