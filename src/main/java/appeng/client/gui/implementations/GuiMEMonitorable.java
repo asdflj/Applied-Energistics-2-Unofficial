@@ -15,6 +15,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
@@ -23,11 +24,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import appeng.api.AEApi;
-import appeng.api.config.CraftingStatus;
-import appeng.api.config.SearchBoxMode;
-import appeng.api.config.Settings;
-import appeng.api.config.TerminalStyle;
-import appeng.api.config.YesNo;
+import appeng.api.config.*;
 import appeng.api.implementations.guiobjects.IPortableCell;
 import appeng.api.implementations.tiles.IMEChest;
 import appeng.api.implementations.tiles.IViewCellStorage;
@@ -38,12 +35,7 @@ import appeng.api.util.IConfigManager;
 import appeng.api.util.IConfigurableObject;
 import appeng.client.ActionKey;
 import appeng.client.gui.AEBaseMEGui;
-import appeng.client.gui.widgets.GuiImgButton;
-import appeng.client.gui.widgets.GuiScrollbar;
-import appeng.client.gui.widgets.GuiTabButton;
-import appeng.client.gui.widgets.IDropToFillTextField;
-import appeng.client.gui.widgets.ISortSource;
-import appeng.client.gui.widgets.MEGuiTextField;
+import appeng.client.gui.widgets.*;
 import appeng.client.me.InternalSlotME;
 import appeng.client.me.ItemRepo;
 import appeng.container.implementations.ContainerMEMonitorable;
@@ -77,7 +69,7 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
     public static int craftingGridOffsetY;
 
     private static String memoryText = "";
-    private final IDisplayRepo repo;
+    protected final IDisplayRepo repo;
     private final int offsetX = 9;
     private final int MAGIC_HEIGHT_NUMBER = 114 + 1;
     private final int lowerTextureOffset = 0;
@@ -111,7 +103,7 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
     }
 
     public GuiMEMonitorable(final InventoryPlayer inventoryPlayer, final ITerminalHost te,
-            final ContainerMEMonitorable c) {
+                            final ContainerMEMonitorable c) {
 
         super(c);
 
@@ -355,7 +347,6 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
             this.searchField.setText(memoryText, true);
             repo.setSearchString(memoryText);
         }
-        this.searchField.setCursorPositionEnd();
 
         this.setScrollBar();
 
@@ -485,9 +476,19 @@ public class GuiMEMonitorable extends AEBaseMEGui implements ISortSource, IConfi
     }
 
     @Override
+    public void handleKeyboardInput() {
+        super.handleKeyboardInput();
+        if (GuiScreen.isShiftKeyDown()) {
+            this.repo.setShouldResort(false);
+        } else if (!this.repo.isResorting()) {
+            this.repo.setShouldResort(true);
+            this.repo.updateView();
+        }
+    }
+
+    @Override
     protected void keyTyped(final char character, final int key) {
         if (!this.checkHotbarKeys(key)) {
-
             if (NEISearchField != null && (NEISearchField.focused() || searchField.isFocused())
                     && CommonHelper.proxy.isActionKey(ActionKey.TOGGLE_FOCUS, key)) {
                 final boolean focused = searchField.isFocused();
