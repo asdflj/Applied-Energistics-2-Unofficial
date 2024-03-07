@@ -31,6 +31,7 @@ public enum Settings {
 
     SORT_DIRECTION(EnumSet.allOf(SortDir.class)),
     SORT_BY(EnumSet.allOf(SortOrder.class)),
+    CRAFTING_SORT_BY(EnumSet.allOf(CraftingSortOrder.class)),
 
     SEARCH_TOOLTIPS(EnumSet.of(YesNo.YES, YesNo.NO)),
     VIEW_MODE(EnumSet.allOf(ViewItems.class)),
@@ -76,7 +77,9 @@ public enum Settings {
 
     LOCK_CRAFTING_MODE(EnumSet.allOf(LockCraftingMode.class)),
 
-    PRIORITY_CARD_MODE(EnumSet.allOf(PriorityCardMode.class));
+    PRIORITY_CARD_MODE(EnumSet.allOf(PriorityCardMode.class)),
+
+    TERMINAL_FONT_SIZE(EnumSet.allOf(TerminalFontSize.class));
 
     private final EnumSet<? extends Enum<?>> values;
 

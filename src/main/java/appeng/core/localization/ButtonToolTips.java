@@ -112,6 +112,7 @@ public enum ButtonToolTips {
 
     Craft,
     Mod,
+    UsedPercent,
     DoesntDespawn,
     EmitterMode,
     CraftViaRedstone,
@@ -164,6 +165,10 @@ public enum ButtonToolTips {
     SearchFieldInputs,
     SearchFieldOutputs,
     SearchFieldNames,
+
+    MultiplyPattern,
+    DividePattern,
+    MultiplyOrDividePatternHint,
 
     InsertionModeDefault,
     InsertionModeDefaultDesc,
