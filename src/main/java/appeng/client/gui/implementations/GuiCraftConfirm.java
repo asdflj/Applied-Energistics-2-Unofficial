@@ -76,12 +76,15 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
 
     public static final int TREE_VIEW_TEXTURE_WIDTH = 238;
     public static final int TREE_VIEW_TEXTURE_HEIGHT = 238;
+    public static final int TREE_VIEW_DEFAULT_CPU_SLOTS = 8;
+    public static final float TERR_VIEW_MAX_WIDTH_RATIO = 0.5f;
 
     public static final int LIST_VIEW_TEXTURE_WIDTH = 238;
     public static final int LIST_VIEW_TEXTURE_HEIGHT = 206;
     public static final int LIST_VIEW_TEXTURE_BELOW_TOP_ROW_Y = 41;
     public static final int LIST_VIEW_TEXTURE_ABOVE_BOTTOM_ROW_Y = 110;
     public static final int LIST_VIEW_TEXTURE_ROW_HEIGHT = 23;
+
     /** How many pixels tall is the list view texture minus the space for rows of items */
     public static final int LIST_VIEW_TEXTURE_NONROW_HEIGHT = LIST_VIEW_TEXTURE_HEIGHT
             - (LIST_VIEW_TEXTURE_ABOVE_BOTTOM_ROW_Y - LIST_VIEW_TEXTURE_BELOW_TOP_ROW_Y)
@@ -115,12 +118,16 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
                 }
             }
             case TREE -> {
-                this.xSize = tallMode ? width - 200 : TREE_VIEW_TEXTURE_WIDTH;
+                this.xSize = tallMode ? Math.max(TREE_VIEW_TEXTURE_WIDTH, (int) (width * TERR_VIEW_MAX_WIDTH_RATIO))
+                        : TREE_VIEW_TEXTURE_WIDTH;
                 this.ySize = tallMode ? height - 64 : TREE_VIEW_TEXTURE_HEIGHT;
+                this.rows = tallMode ? (ySize - 46) / LIST_VIEW_TEXTURE_ROW_HEIGHT : TREE_VIEW_DEFAULT_CPU_SLOTS;
                 this.craftingTree.widgetW = xSize - 35;
                 this.craftingTree.widgetH = ySize - 46;
             }
         }
+        GuiCraftingCPUTable.CPU_TABLE_SLOTS = this.rows;
+        GuiCraftingCPUTable.CPU_TABLE_HEIGHT = this.rows * LIST_VIEW_TEXTURE_ROW_HEIGHT + 27;
     }
 
     private final ContainerCraftConfirm ccc;
@@ -150,6 +157,7 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
     private GuiTabButton switchDisplayMode;
     private GuiImgButton sortingModeButton;
     private GuiImgButton sortingDirectionButton;
+    private GuiSimpleImgButton optimizeButton;
     private int tooltip = -1;
     private ItemStack hoveredStack;
 
@@ -236,14 +244,14 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
 
         this.switchTallMode = new GuiImgButton(
                 this.guiLeft - 18,
-                this.guiTop + 166,
+                this.guiTop + this.ySize - 18,
                 Settings.TERMINAL_STYLE,
                 tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL);
         this.buttonList.add(switchTallMode);
 
         this.takeScreenshot = new GuiSimpleImgButton(
-                this.guiLeft - 18,
-                this.guiTop + 184,
+                this.guiLeft - 36,
+                this.guiTop + this.ySize - 18,
                 16 * 9,
                 ButtonToolTips.SaveAsImage.getLocal());
         this.buttonList.add(takeScreenshot);
@@ -274,12 +282,18 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
                 this.sortDir);
         this.buttonList.add(this.sortingDirectionButton);
 
+        this.optimizeButton = new GuiSimpleImgButton(
+                this.guiLeft + this.xSize + 2,
+                this.guiTop + 8 + 20 * 2,
+                19,
+                ButtonToolTips.OptimizePatterns.getLocal());
+        this.optimizeButton.enabled = false;
+        this.buttonList.add(this.optimizeButton);
     }
 
     @Override
     public void drawScreen(final int mouseX, final int mouseY, final float btn) {
         this.updateCPUButtonText();
-
         cpuTable.drawScreen();
 
         this.start.enabled = !(this.ccc.hasNoCPU() || this.isSimulation());
@@ -291,7 +305,12 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
         }
 
         this.selectCPU.enabled = (displayMode == DisplayMode.LIST) && !this.isSimulation();
-        this.selectCPU.visible = this.sortingModeButton.visible = this.sortingDirectionButton.visible = (displayMode
+        this.optimizeButton.enabled = (displayMode == DisplayMode.LIST) && !this.isSimulation()
+                && this.ccc.isAllowedToRunPatternOptimization;
+        if (!this.ccc.isAllowedToRunPatternOptimization) this.optimizeButton.setTooltip(
+                ButtonToolTips.OptimizePatterns.getLocal() + "\n" + ButtonToolTips.OptimizePatternsNoReq.getLocal());
+        else this.optimizeButton.setTooltip(ButtonToolTips.OptimizePatterns.getLocal());
+        this.selectCPU.visible = this.optimizeButton.visible = this.sortingModeButton.visible = this.sortingDirectionButton.visible = (displayMode
                 == DisplayMode.LIST);
         this.takeScreenshot.visible = (displayMode == DisplayMode.TREE);
 
@@ -364,12 +383,12 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
         cpuTable.drawFG(offsetX, offsetY, mouseX, mouseY, guiLeft, guiTop);
 
         final long BytesUsed = this.ccc.getUsedBytes();
-        final String byteUsed = NumberFormat.getInstance().format(BytesUsed);
+        final String byteUsed = Platform.formatByteDouble(BytesUsed);
         final String bannerText;
         if (jobTree != null && !jobTree.getErrorMessage().isEmpty()) {
             bannerText = StatCollector.translateToLocal(jobTree.getErrorMessage());
         } else if (BytesUsed > 0) {
-            bannerText = (byteUsed + ' ' + GuiText.BytesUsed.getLocal());
+            bannerText = byteUsed;
         } else {
             bannerText = GuiText.CalculatingWait.getLocal();
         }
@@ -393,7 +412,7 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
         } else {
             dsp = this.ccc.getCpuAvailableBytes() > 0
                     ? (GuiText.Bytes.getLocal() + ": "
-                            + NumberFormat.getInstance().format(this.ccc.getCpuAvailableBytes())
+                            + Platform.formatByteDouble(this.ccc.getCpuAvailableBytes())
                             + " : "
                             + GuiText.CoProcessors.getLocal()
                             + ": "
@@ -872,6 +891,12 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
                 this.sortItems();
             }
             iBtn.set(next);
+        } else if (btn == this.optimizeButton) {
+            try {
+                NetworkHandler.instance.sendToServer(new PacketValueConfig("Terminal.OptimizePatterns", "Patterns"));
+            } catch (final Throwable e) {
+                AELog.debug(e);
+            }
         } else if (btn == this.start) {
             try {
                 NetworkHandler.instance.sendToServer(new PacketValueConfig("Terminal.Start", "Start"));

@@ -147,6 +147,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
         this.cm.registerSetting(Settings.INSERTION_MODE, InsertionMode.DEFAULT);
         this.cm.registerSetting(Settings.ADVANCED_BLOCKING_MODE, AdvancedBlockingMode.DEFAULT);
         this.cm.registerSetting(Settings.LOCK_CRAFTING_MODE, LockCraftingMode.NONE);
+        this.cm.registerSetting(Settings.PATTERN_OPTIMIZATION, YesNo.YES);
 
         this.iHost = ih;
         this.craftingTracker = new MultiCraftingTracker(this.iHost, 9);
@@ -856,7 +857,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
     private boolean gtMachineHasOnlyCircuit(InventoryAdaptor ad) {
         for (ItemSlot i : ad) {
             ItemStack is = i.getItemStack();
-            if (is == null || is.getItem().getUnlocalizedName().equals("gt.integrated_circuit")) continue;
+            if (BlockingModeIgnoreList.isIgnored(is)) continue;
             return false;
         }
         return true;
