@@ -13,6 +13,7 @@ package appeng.helpers;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +30,9 @@ import net.minecraft.world.World;
 import appeng.api.AEApi;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.api.storage.data.IAEItemStack;
+import appeng.api.storage.data.IItemList;
 import appeng.container.ContainerNull;
+import appeng.core.AELog;
 import appeng.util.ItemSorters;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
@@ -52,6 +55,7 @@ public class PatternHelper implements ICraftingPatternDetails, Comparable<Patter
     private final Set<TestLookup> passCache = new HashSet<>();
     private final IAEItemStack pattern;
     private int priority = 0;
+    private static final PatternCache cache = new PatternCache();
 
     public PatternHelper(final ItemStack is, final World w) {
         final NBTTagCompound encodedValue = is.getTagCompound();
@@ -151,24 +155,7 @@ public class PatternHelper implements ICraftingPatternDetails, Comparable<Patter
         return this.patternItem;
     }
 
-    @Override
-    public synchronized boolean isValidItemForSlot(final int slotIndex, final ItemStack i, final World w) {
-        if (!this.isCrafting) {
-            throw new IllegalStateException("Only crafting recipes supported.");
-        }
-
-        final TestStatus result = this.getStatus(slotIndex, i);
-
-        switch (result) {
-            case ACCEPT -> {
-                return true;
-            }
-            case DECLINE -> {
-                return false;
-            }
-            default -> {}
-        }
-
+    private synchronized boolean _IsValidItemForSlot(final int slotIndex, final ItemStack i, final World w) {
         for (int x = 0; x < this.crafting.getSizeInventory(); x++) {
             this.testFrame.setInventorySlotContents(x, this.crafting.getStackInSlot(x));
         }
@@ -194,6 +181,62 @@ public class PatternHelper implements ICraftingPatternDetails, Comparable<Patter
         }
 
         this.markItemAs(slotIndex, i, TestStatus.DECLINE);
+        return false;
+    }
+
+    public static class PatternCache {
+
+        protected LinkedHashMap<IAEItemStack, Map<Integer, IItemList<IAEItemStack>>> cache = new LinkedHashMap<>() {
+
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<IAEItemStack, Map<Integer, IItemList<IAEItemStack>>> eldest) {
+                return size() > 3000;
+            }
+        };
+
+        public void addPattern(final IAEItemStack pattern, int slot, IAEItemStack item) {
+            cache.putIfAbsent(pattern, new HashMap<>());
+            Map<Integer, IItemList<IAEItemStack>> t = cache.get(pattern);
+            t.putIfAbsent(slot, AEApi.instance().storage().createPrimitiveItemList());
+            if (t.get(slot).findPrecise(item) == null) {
+                t.get(slot).add(item);
+            }
+        }
+
+        public boolean isValidItemForSlot(final IAEItemStack pattern, int slot, IAEItemStack item) {
+            Map<Integer, IItemList<IAEItemStack>> t = cache.get(pattern);
+            if (t == null) return false;
+            IItemList<IAEItemStack> list = t.get(slot);
+            if (list == null) return false;
+            return list.findPrecise(item) != null;
+        }
+
+    }
+
+    @Override
+    public boolean isValidItemForSlot(final int slotIndex, final ItemStack i, final World w) {
+        if (!this.isCrafting) {
+            throw new IllegalStateException("Only crafting recipes supported.");
+        }
+        if (cache.isValidItemForSlot(this.pattern, slotIndex, AEItemStack.create(i))) {
+            AELog.info("hit cache for pattern" + this.patternItem.getDisplayName());
+            return true;
+        }
+
+        final TestStatus result = this.getStatus(slotIndex, i);
+
+        switch (result) {
+            case ACCEPT -> {
+                return true;
+            }
+            case DECLINE -> {
+                return false;
+            }
+            default -> {}
+        }
+        if (_IsValidItemForSlot(slotIndex, i, w)) {
+            cache.addPattern(this.pattern, slotIndex, AEItemStack.create(i));
+        }
         return false;
     }
 
