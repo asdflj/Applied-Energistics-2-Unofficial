@@ -110,6 +110,10 @@ chat.appliedenergistics2.FBOUnsupported=OpenGL FBOs not supported, cannot export
 chat.appliedenergistics2.PriorityInvalidTarget=Target has no priority
 chat.appliedenergistics2.PriorityReadout=Current priority is %d
 chat.appliedenergistics2.PriorityConfigured=Updated priority to %d
+chat.appliedenergistics2.DriveLocked=Digital Singularity cells in drive were locked to the current item on them
+chat.appliedenergistics2.ChestLocked=Digital Singularity cell in chest was locked to the current item on it
+chat.appliedenergistics2.FinishCraftingRemind=Crafting of %s * %s finished in %s.
+
 # Creative Tabs
 itemGroup.appliedenergistics2=Applied Energistics 2
 itemGroup.appliedenergistics2.facades=Applied Energistics 2 - Facades
@@ -123,6 +127,7 @@ gui.appliedenergistics2.RedstoneTunnel=Redstone
 gui.appliedenergistics2.EUTunnel=EU
 gui.appliedenergistics2.RFTunnel=RF
 gui.appliedenergistics2.LightTunnel=Light
+gui.appliedenergistics2.SoundTunnel=Sound
 gui.appliedenergistics2.OCTunnel=OpenComputers
 gui.appliedenergistics2.PressureTunnel=Pressure
 gui.appliedenergistics2.GTTunnel=GT EU
@@ -252,6 +257,7 @@ gui.appliedenergistics2.ToCraftRequests=Steps
 gui.appliedenergistics2.CraftingPlan=Crafting Plan
 gui.appliedenergistics2.Automatic=Automatic
 gui.appliedenergistics2.Start=Start
+gui.appliedenergistics2.Merge=Merge
 gui.appliedenergistics2.Missing=Missing
 gui.appliedenergistics2.NoCraftingTreeReceived=No crafting tree received
 gui.appliedenergistics2.CraftingStepLimitExceeded=Crafting step limit exceeded
@@ -312,6 +318,8 @@ gui.appliedenergistics2.Orange=Orange
 gui.appliedenergistics2.Red=Red
 gui.appliedenergistics2.TypesInfo=Types
 gui.appliedenergistics2.BytesInfo=Bytes
+gui.appliedenergistics2.ToFollow=Follow
+gui.appliedenergistics2.ToUnfollow=Unfollow
 
 # GUI Colors - ARGB
 gui.color.appliedenergistics2.SearchboxFocused=6E000000
@@ -516,6 +524,8 @@ gui.tooltips.appliedenergistics2.PriorityCardMode_Dec=Apply priority to targets 
 gui.tooltips.appliedenergistics2.MultiplyPattern=Multiply
 gui.tooltips.appliedenergistics2.DividePattern=Divide
 gui.tooltips.appliedenergistics2.MultiplyOrDividePatternHint=If it's positive, it's multiplying by that number. If it's negative, it's dividing by that number. It will not work if it is not divisible.
+gui.tooltips.appliedenergistics2.ToFollow=Click to follow this craft and receive message when it is complete\nYou are not following this crafting job right now
+gui.tooltips.appliedenergistics2.ToUnfollow=Click to stop following this craft\nYou are following this crafting job and will receive chat message when it's complete
 
 # Units
 gui.appliedenergistics2.units.appliedenergstics=AE

@@ -172,9 +172,11 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
         scrollbar = new GuiScrollbar();
         this.setScrollBar(scrollbar);
 
-        this.cpuTable = new GuiCraftingCPUTable(this, ((ContainerCraftConfirm) inventorySlots).cpuTable);
-
         this.ccc = (ContainerCraftConfirm) this.inventorySlots;
+        this.cpuTable = new GuiCraftingCPUTable(
+                this,
+                ((ContainerCraftConfirm) inventorySlots).cpuTable,
+                c -> this.ccc.cpuCraftingSameItem(c) && this.ccc.cpuMatches(c));
 
         if (te instanceof WirelessTerminalGuiObject) {
             this.OriginalGui = GuiBridge.GUI_WIRELESS_TERM;
@@ -299,7 +301,12 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
         this.start.enabled = !(this.ccc.hasNoCPU() || this.isSimulation());
         if (this.start.enabled) {
             CraftingCPUStatus selected = this.cpuTable.getContainer().getSelectedCPU();
-            if (selected == null || selected.getStorage() < this.ccc.getUsedBytes() || selected.isBusy()) {
+            if (selected != null && this.ccc.cpuCraftingSameItem(selected)) {
+                this.start.displayString = GuiText.Merge.getLocal();
+            } else {
+                this.start.displayString = GuiText.Start.getLocal();
+            }
+            if (selected == null || !this.ccc.cpuMatches(selected)) {
                 this.start.enabled = false;
             }
         }
@@ -957,9 +964,13 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
 
     protected void addMissingItemsToBookMark() {
         if (!this.missing.isEmpty() && isShiftKeyDown()) {
+            List<ItemStack> missing = new ArrayList<>();
+
             for (IAEItemStack iaeItemStack : this.missing) {
-                NEI.instance.addItemToBookMark(iaeItemStack.getItemStack());
+                missing.add(iaeItemStack.getItemStack());
             }
+
+            NEI.instance.addToBookmark(jobTree.getOutput().getItemStack(), missing);
         }
     }
 

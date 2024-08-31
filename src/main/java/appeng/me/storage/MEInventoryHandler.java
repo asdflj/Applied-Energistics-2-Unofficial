@@ -10,6 +10,8 @@
 
 package appeng.me.storage;
 
+import java.util.function.Predicate;
+
 import javax.annotation.Nonnull;
 
 import appeng.api.config.AccessRestriction;
@@ -31,11 +33,13 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
     private IncludeExclude myWhitelist;
     private AccessRestriction myAccess;
     private IPartitionList<T> myPartitionList;
+    private IPartitionList<T> myExtractPartitionList;
 
     private AccessRestriction cachedAccessRestriction;
     private boolean hasReadAccess;
     protected boolean hasWriteAccess;
     protected boolean isSticky;
+    protected boolean isExtractFilterActive;
 
     public MEInventoryHandler(final IMEInventory<T> i, final StorageChannel channel) {
         if (i instanceof IMEInventoryHandler) {
@@ -48,6 +52,7 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
         this.myWhitelist = IncludeExclude.WHITELIST;
         this.setBaseAccess(AccessRestriction.READ_WRITE);
         this.myPartitionList = new DefaultPriorityList<>();
+        this.myExtractPartitionList = new DefaultPriorityList<>();
     }
 
     public IncludeExclude getWhitelist() {
@@ -69,7 +74,15 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
         this.hasWriteAccess = this.cachedAccessRestriction.hasPermission(AccessRestriction.WRITE);
     }
 
-    IPartitionList<T> getPartitionList() {
+    public IPartitionList<T> getExtractPartitionList() {
+        return this.myExtractPartitionList;
+    }
+
+    public void setExtractPartitionList(IPartitionList<T> myExtractPartitionList) {
+        this.myExtractPartitionList = myExtractPartitionList;
+    }
+
+    public IPartitionList<T> getPartitionList() {
         return this.myPartitionList;
     }
 
@@ -91,26 +104,68 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
         if (!this.hasReadAccess) {
             return null;
         }
+        if (this.isExtractFilterActive() && !this.myExtractPartitionList.isEmpty()) {
+            Predicate<T> filterCondition = this.getExtractFilterCondition();
+            if (!filterCondition.test(request)) {
+                return null;
+            }
+        }
 
         return this.internal.extractItems(request, type, src);
     }
 
     @Override
-    public IItemList<T> getAvailableItems(final IItemList<T> out) {
+    public IItemList<T> getAvailableItems(final IItemList<T> out, int iteration) {
         if (!this.hasReadAccess) {
             return out;
         }
 
-        return this.internal.getAvailableItems(out);
+        if (this.isExtractFilterActive() && !this.myExtractPartitionList.isEmpty()) {
+            return this.filterAvailableItems(out, iteration);
+        } else {
+            return this.internal.getAvailableItems(out, iteration);
+        }
+    }
+
+    protected IItemList<T> filterAvailableItems(IItemList<T> out, int iteration) {
+        final IItemList<T> allAvailableItems = this.internal
+                .getAvailableItems((IItemList<T>) this.internal.getChannel().createList(), iteration);
+        Predicate<T> filterCondition = this.getExtractFilterCondition();
+        for (T item : allAvailableItems) {
+            if (filterCondition.test(item)) {
+                out.add(item);
+            }
+        }
+        return out;
     }
 
     @Override
-    public T getAvailableItem(@Nonnull T request) {
+    public T getAvailableItem(@Nonnull T request, int iteration) {
         if (!this.hasReadAccess) {
             return null;
         }
 
-        return this.internal.getAvailableItem(request);
+        if (this.isExtractFilterActive() && !this.myExtractPartitionList.isEmpty()) {
+            Predicate<T> filterCondition = this.getExtractFilterCondition();
+            if (!filterCondition.test(request)) {
+                return null;
+            }
+        }
+
+        return this.internal.getAvailableItem(request, iteration);
+    }
+
+    public Predicate<T> getExtractFilterCondition() {
+        return this.myWhitelist == IncludeExclude.WHITELIST ? i -> this.myExtractPartitionList.isListed(i)
+                : i -> !this.myExtractPartitionList.isListed(i);
+    }
+
+    public boolean isExtractFilterActive() {
+        return this.isExtractFilterActive;
+    }
+
+    public void setIsExtractFilterActive(boolean isExtractFilterActive) {
+        this.isExtractFilterActive = isExtractFilterActive;
     }
 
     @Override
