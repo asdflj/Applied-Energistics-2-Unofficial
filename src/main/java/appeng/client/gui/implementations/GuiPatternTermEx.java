@@ -78,10 +78,10 @@ public class GuiPatternTermEx extends GuiMEMonitorable {
                                 "PatternTerminalEx.BeSubstitute",
                                 this.beSubstitutionsEnabledBtn == btn ? SUBSITUTION_DISABLE : SUBSITUTION_ENABLE));
             } else if (doubleBtn == btn) {
-                NetworkHandler.instance.sendToServer(
-                        new PacketValueConfig(
-                                "PatternTerminalEx.Double",
-                                Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) ? "1" : "0"));
+                int val = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) ? 1 : 0;
+                if (Mouse.isButtonDown(1)) val |= 0b10;
+                NetworkHandler.instance
+                        .sendToServer(new PacketValueConfig("PatternTerminalEx.Double", String.valueOf(val)));
             }
         } catch (final IOException e) {
             // TODO Auto-generated catch block
@@ -232,7 +232,7 @@ public class GuiPatternTermEx extends GuiMEMonitorable {
     @Override
     protected void mouseClickMove(final int x, final int y, final int c, final long d) {
         final int currentScroll = this.processingScrollBar.getCurrentScroll();
-        this.processingScrollBar.click(this, x - this.guiLeft, y - this.guiTop);
+        this.processingScrollBar.clickMove(y - this.guiTop);
         super.mouseClickMove(x, y, c, d);
 
         if (currentScroll != this.processingScrollBar.getCurrentScroll()) {

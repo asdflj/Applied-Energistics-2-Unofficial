@@ -50,6 +50,7 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartHost;
 import appeng.api.parts.IPartRenderHelper;
+import appeng.api.parts.PartItemStack;
 import appeng.api.storage.ICellContainer;
 import appeng.api.storage.IExternalStorageHandler;
 import appeng.api.storage.IMEInventory;
@@ -72,6 +73,7 @@ import appeng.integration.IntegrationType;
 import appeng.me.GridAccessException;
 import appeng.me.storage.MEInventoryHandler;
 import appeng.me.storage.MEMonitorIInventory;
+import appeng.me.storage.StorageBusInventoryHandler;
 import appeng.parts.automation.PartUpgradeable;
 import appeng.tile.inventory.AppEngInternalAEInventory;
 import appeng.tile.inventory.InvOperation;
@@ -114,6 +116,27 @@ public class PartStorageBus extends PartUpgradeable implements IGridTickable, IC
         this.getConfigManager().registerSetting(Settings.STORAGE_FILTER, StorageFilter.EXTRACTABLE_ONLY);
         this.getConfigManager().registerSetting(Settings.STICKY_MODE, YesNo.NO);
         this.mySrc = new MachineSource(this);
+        if (is.getTagCompound() != null) {
+            NBTTagCompound tag = is.getTagCompound();
+            if (tag.hasKey("priority")) {
+                priority = tag.getInteger("priority");
+                // if we don't do this, the tag will stick forever to the storage bus, as it's never cleaned up,
+                // even when the item is broken with a pickaxe
+                this.is.setTagCompound(null);
+            }
+        }
+    }
+
+    @Override
+    public ItemStack getItemStack(final PartItemStack type) {
+        if (type == PartItemStack.Wrench) {
+            final NBTTagCompound tag = new NBTTagCompound();
+            tag.setInteger("priority", priority);
+            final ItemStack copy = this.is.copy();
+            copy.setTagCompound(tag);
+            return copy;
+        }
+        return super.getItemStack(type);
     }
 
     @Override
@@ -226,7 +249,8 @@ public class PartStorageBus extends PartUpgradeable implements IGridTickable, IC
                 if (!this.readOncePass) {
                     AccessRestriction currentAccess = (AccessRestriction) this.getConfigManager()
                             .getSetting(Settings.ACCESS);
-                    if (!currentAccess.hasPermission(AccessRestriction.READ)) {
+                    if (!currentAccess.hasPermission(AccessRestriction.READ)
+                            && !this.getInternalHandler().isVisible()) {
                         return;
                     }
                 }
@@ -457,7 +481,7 @@ public class PartStorageBus extends PartUpgradeable implements IGridTickable, IC
                 if (inv != null) {
                     this.checkInterfaceVsStorageBus(target, this.getSide().getOpposite());
 
-                    this.handler = new MEInventoryHandler<IAEItemStack>(inv, StorageChannel.ITEMS);
+                    this.handler = new StorageBusInventoryHandler<>(inv, StorageChannel.ITEMS);
 
                     AccessRestriction currentAccess = (AccessRestriction) this.getConfigManager()
                             .getSetting(Settings.ACCESS);
@@ -470,6 +494,10 @@ public class PartStorageBus extends PartUpgradeable implements IGridTickable, IC
                     // could use a new setting that is applied via button or a card too
                     this.handler.setIsExtractFilterActive(currentAccess == AccessRestriction.READ);
 
+                    if (this.getInstalledUpgrades(Upgrades.STICKY) > 0) {
+                        this.handler.setSticky(true);
+                    }
+
                     if (this.oreFilterString.isEmpty()) {
                         final IItemList<IAEItemStack> priorityList = AEApi.instance().storage().createItemList();
 
@@ -478,9 +506,7 @@ public class PartStorageBus extends PartUpgradeable implements IGridTickable, IC
                             final IAEItemStack is = this.Config.getAEStackInSlot(x);
                             if (is != null) priorityList.add(is);
                         }
-                        if (this.getInstalledUpgrades(Upgrades.STICKY) > 0) {
-                            this.handler.setSticky(true);
-                        }
+
                         if (this.getInstalledUpgrades(Upgrades.FUZZY) > 0) {
                             FuzzyPriorityList<IAEItemStack> partitionList = new FuzzyPriorityList<>(
                                     priorityList,

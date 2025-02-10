@@ -158,6 +158,7 @@ public enum GuiText {
     CraftingPlan,
     CalculatingWait,
     Start,
+    StartWithFollow,
     Merge,
     Bytes,
     Set,
@@ -234,10 +235,12 @@ public enum GuiText {
     Deprecated,
 
     // Network bytes status
+    NetworkCellStatus,
     NetworkItemCellCount,
     NetworkFluidCellCount,
     NetworkEssentiaCellCount,
     Green,
+    Blue,
     Orange,
     Red,
     NetworkBytesDetails,
@@ -247,7 +250,18 @@ public enum GuiText {
     TypesInfo,
     BytesInfo,
     ToFollow,
-    ToUnfollow;
+    ToUnfollow,
+    CellRestriction,
+    CellRestrictionTips,
+    Restricted,
+    MaxItems,
+    MaxFluid,
+    MaxTypes,
+    NumberOfItems,
+    NumberOfFluids,
+    ItemsPerByte,
+    FluidsPerByte,
+    BytesPerType;
 
     private final String root;
 

@@ -27,6 +27,7 @@ import appeng.api.config.PowerUnits;
 import appeng.api.config.SearchBoxMode;
 import appeng.api.config.Settings;
 import appeng.api.config.SortDir;
+import appeng.api.config.StringOrder;
 import appeng.api.config.TerminalFontSize;
 import appeng.api.config.TerminalStyle;
 import appeng.api.config.YesNo;
@@ -59,7 +60,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     public int storageBiomeID = -1;
     public int storageProviderID = -1;
     public int formationPlaneEntityLimit = 128;
-    public double networkBytesUpdateFrequency = 2.0d;
+    public double networkBytesUpdateFrequency = 1.0d;
     public float spawnChargedChance = 0.92f;
     public int quartzOresPerCluster = 4;
     public int quartzOresClusterAmount = 15;
@@ -89,8 +90,6 @@ public final class AEConfig extends Configuration implements IConfigurableObject
 
     public boolean debugLogTiming = false;
     public boolean debugPathFinding = false;
-    public boolean p2pBackboneTransfer = false;
-    public boolean quantumBridgeBackboneTransfer = false;
     public int wirelessTerminalBattery = 1600000;
     public int entropyManipulatorBattery = 200000;
     public int matterCannonBattery = 200000;
@@ -152,12 +151,14 @@ public final class AEConfig extends Configuration implements IConfigurableObject
 
         this.settings.registerSetting(Settings.SEARCH_TOOLTIPS, YesNo.YES);
         this.settings.registerSetting(Settings.TERMINAL_STYLE, TerminalStyle.TALL);
+        this.settings.registerSetting(Settings.HIDE_STORED, YesNo.NO);
         this.settings.registerSetting(Settings.SEARCH_MODE, SearchBoxMode.AUTOSEARCH);
         this.settings.registerSetting(Settings.SAVE_SEARCH, YesNo.NO);
         this.settings.registerSetting(Settings.CRAFTING_STATUS, CraftingStatus.TILE);
         this.settings.registerSetting(Settings.CRAFTING_SORT_BY, CraftingSortOrder.NAME);
         this.settings.registerSetting(Settings.SORT_DIRECTION, SortDir.ASCENDING);
         this.settings.registerSetting(Settings.TERMINAL_FONT_SIZE, TerminalFontSize.SMALL);
+        this.settings.registerSetting(Settings.INTERFACE_TERMINAL_SECTION_ORDER, StringOrder.NATURAL);
 
         this.spawnChargedChance = (float) (1.0
                 - this.get("worldGen", "spawnChargedChance", 1.0 - this.spawnChargedChance)
@@ -209,7 +210,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         this.get(
                 "automation",
                 "networkBytesUpdateFrequency",
-                this.networkBytesUpdateFrequency).comment = "#Network bytes information update Frequency(s) default:2.0";
+                this.networkBytesUpdateFrequency).comment = "#Network bytes information update Frequency(s) default:1.0";
 
         this.wirelessTerminalBattery = this.get("battery", "wirelessTerminal", this.wirelessTerminalBattery)
                 .getInt(this.wirelessTerminalBattery);
@@ -229,11 +230,6 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         this.debugLogTiming = this.get("debug", "LogTiming", this.debugLogTiming).getBoolean(this.debugLogTiming);
         this.debugPathFinding = this.get("debug", "LogPathFinding", this.debugPathFinding)
                 .getBoolean(this.debugPathFinding);
-        this.p2pBackboneTransfer = this.get("debug", "EnableP2pBackboneTransfer", this.p2pBackboneTransfer)
-                .getBoolean(this.p2pBackboneTransfer);
-        this.quantumBridgeBackboneTransfer = this
-                .get("debug", "EnableQuantumBridgeBackboneTransfer", this.quantumBridgeBackboneTransfer)
-                .getBoolean(this.quantumBridgeBackboneTransfer);
         this.craftingCalculatorVersion = this.get("debug", "CraftingCalculatorVersion", this.craftingCalculatorVersion)
                 .getInt(this.craftingCalculatorVersion);
         this.craftingCalculatorVersion = Math.max(1, Math.min(this.craftingCalculatorVersion, 2));

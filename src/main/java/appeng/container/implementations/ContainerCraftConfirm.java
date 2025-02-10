@@ -251,7 +251,7 @@ public class ContainerCraftConfirm extends AEBaseContainer implements ICraftingC
         return h.getActionableNode().getGrid();
     }
 
-    private IAEItemStack getItemToCraft() {
+    public IAEItemStack getItemToCraft() {
         try {
             ByteBuf deserialized = Unpooled.wrappedBuffer(serializedItemToCraft.getBytes(StandardCharsets.ISO_8859_1));
             return AEApi.instance().storage().readItemFromPacket(deserialized);
@@ -286,6 +286,24 @@ public class ContainerCraftConfirm extends AEBaseContainer implements ICraftingC
                     (selected == null) ? null : selected.getServerCluster(),
                     true,
                     this.getActionSrc());
+            this.setAutoStart(false);
+            if (g != null) {
+                this.switchToOriginalGUI();
+            }
+        }
+    }
+
+    public void startJob(String playerName) {
+        if (this.result != null && !this.isSimulation() && getGrid() != null) {
+            final ICraftingGrid cc = this.getGrid().getCache(ICraftingGrid.class);
+            CraftingCPUStatus selected = this.cpuTable.getSelectedCPU();
+            final ICraftingLink g = cc.submitJob(
+                    this.result,
+                    null,
+                    (selected == null) ? null : selected.getServerCluster(),
+                    true,
+                    this.getActionSrc());
+            selected.getServerCluster().togglePlayerFollowStatus(playerName);
             this.setAutoStart(false);
             if (g != null) {
                 this.switchToOriginalGUI();

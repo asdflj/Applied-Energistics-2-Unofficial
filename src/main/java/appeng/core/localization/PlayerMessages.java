@@ -38,11 +38,16 @@ public enum PlayerMessages {
     TunnelOutputsAreAt,
     InterfaceInOtherDim,
     InterfaceHighlighted,
+    LevelEmitterInAnotherDim,
+    LevelEmitterHighlighted,
+    P2PInAnotherDim,
+    P2PHighlighted,
     CraftingItemsWentMissing,
     PriorityInvalidTarget,
     PriorityReadout,
     PriorityConfigured,
-    FinishCraftingRemind;
+    FinishCraftingRemind,
+    CraftingCantExtract;
 
     public IChatComponent get() {
         return new ChatComponentTranslation(this.getName());
@@ -53,6 +58,6 @@ public enum PlayerMessages {
     }
 
     public String getName() {
-        return "chat.appliedenergistics2." + this.toString();
+        return "chat.appliedenergistics2." + this.name();
     }
 }

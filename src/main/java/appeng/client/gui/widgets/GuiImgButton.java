@@ -49,6 +49,7 @@ import appeng.api.config.SidelessMode;
 import appeng.api.config.SortDir;
 import appeng.api.config.SortOrder;
 import appeng.api.config.StorageFilter;
+import appeng.api.config.StringOrder;
 import appeng.api.config.TerminalStyle;
 import appeng.api.config.TypeFilter;
 import appeng.api.config.ViewItems;
@@ -295,6 +296,18 @@ public class GuiImgButton extends GuiButton implements ITooltip {
                     TerminalStyle.FULL,
                     ButtonToolTips.TerminalStyle,
                     ButtonToolTips.TerminalStyle_Full);
+            this.registerApp(
+                    16 * 13 + 6,
+                    Settings.HIDE_STORED,
+                    YesNo.NO,
+                    ButtonToolTips.HideStored,
+                    ButtonToolTips.Disabled);
+            this.registerApp(
+                    16 * 13 + 7,
+                    Settings.HIDE_STORED,
+                    YesNo.YES,
+                    ButtonToolTips.HideStored,
+                    ButtonToolTips.Enable);
 
             this.registerApp(64, Settings.SORT_BY, SortOrder.NAME, ButtonToolTips.SortBy, ButtonToolTips.ItemName);
             this.registerApp(
@@ -478,6 +491,18 @@ public class GuiImgButton extends GuiButton implements ITooltip {
                     YesNo.NO,
                     ButtonToolTips.InterfaceBlockingMode,
                     ButtonToolTips.NonBlocking);
+            this.registerApp(
+                    16 + 9,
+                    Settings.SMART_BLOCK,
+                    YesNo.YES,
+                    ButtonToolTips.InterfaceSmartBlockingMode,
+                    ButtonToolTips.SmartBlocking);
+            this.registerApp(
+                    16 + 5,
+                    Settings.SMART_BLOCK,
+                    YesNo.NO,
+                    ButtonToolTips.InterfaceSmartBlockingMode,
+                    ButtonToolTips.NonSmartBlocking);
 
             this.registerApp(16 + 3, Settings.CRAFT_ONLY, YesNo.YES, ButtonToolTips.Craft, ButtonToolTips.CraftOnly);
             this.registerApp(16 + 2, Settings.CRAFT_ONLY, YesNo.NO, ButtonToolTips.Craft, ButtonToolTips.CraftEither);
@@ -768,6 +793,26 @@ public class GuiImgButton extends GuiButton implements ITooltip {
                     PriorityCardMode.DEC,
                     ButtonToolTips.PriorityCardMode,
                     ButtonToolTips.PriorityCardMode_Dec);
+
+            this.registerApp(
+                    64,
+                    Settings.INTERFACE_TERMINAL_SECTION_ORDER,
+                    StringOrder.NATURAL,
+                    ButtonToolTips.StringOrder,
+                    ButtonToolTips.StringOrderNatural);
+            this.registerApp(
+                    16,
+                    Settings.INTERFACE_TERMINAL_SECTION_ORDER,
+                    StringOrder.ALPHANUM,
+                    ButtonToolTips.StringOrder,
+                    ButtonToolTips.StringOrderAlphanum);
+
+            this.registerApp(
+                    16 * 6 + 8,
+                    Settings.ACTIONS,
+                    ActionItems.CELL_RESTRICTION,
+                    ButtonToolTips.CellRestrictionLabel,
+                    ButtonToolTips.CellRestrictionHint);
 
         }
     }

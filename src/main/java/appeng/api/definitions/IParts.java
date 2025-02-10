@@ -30,10 +30,6 @@ public interface IParts {
 
     AEColoredItemDefinition cableDenseCovered();
 
-    AEColoredItemDefinition cableUltraDenseCovered();
-
-    AEColoredItemDefinition cableUltraDenseSmart();
-
     AEColoredItemDefinition lumenCableSmart();
 
     AEColoredItemDefinition lumenCableCovered();
@@ -43,6 +39,8 @@ public interface IParts {
     AEColoredItemDefinition lumenCableDense();
 
     IItemDefinition quartzFiber();
+
+    IItemDefinition partCreativeEnergy();
 
     IItemDefinition toggleBus();
 

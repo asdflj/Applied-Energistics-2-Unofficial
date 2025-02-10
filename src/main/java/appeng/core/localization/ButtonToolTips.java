@@ -33,6 +33,7 @@ public enum ButtonToolTips {
     TrashController,
 
     InterfaceBlockingMode,
+    InterfaceSmartBlockingMode,
     InterfaceCraftingMode,
     Trash,
     MatterBalls,
@@ -84,6 +85,8 @@ public enum ButtonToolTips {
 
     Blocking,
     NonBlocking,
+    SmartBlocking,
+    NonSmartBlocking,
 
     LevelType,
     LevelType_Energy,
@@ -94,6 +97,7 @@ public enum ButtonToolTips {
     TerminalStyle_Tall,
     TerminalStyle_Small,
     SaveAsImage,
+    HideStored,
 
     Stash,
     StashDesc,
@@ -214,7 +218,14 @@ public enum ButtonToolTips {
     PriorityCardMode_Inc,
     PriorityCardMode_Dec,
     ToFollow,
-    ToUnfollow;
+    ToUnfollow,
+
+    StringOrder,
+    StringOrderNatural,
+    StringOrderAlphanum,
+
+    CellRestrictionLabel,
+    CellRestrictionHint;
 
     private final String root;
 
