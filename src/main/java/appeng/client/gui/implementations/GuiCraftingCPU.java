@@ -29,6 +29,7 @@ import org.lwjgl.opengl.GL11;
 import com.google.common.base.Joiner;
 
 import appeng.api.AEApi;
+import appeng.api.config.CraftingAllow;
 import appeng.api.config.Settings;
 import appeng.api.config.SortDir;
 import appeng.api.config.SortOrder;
@@ -39,21 +40,27 @@ import appeng.api.storage.data.IItemList;
 import appeng.api.util.DimensionalCoord;
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.IGuiTooltipHandler;
+import appeng.client.gui.widgets.GuiAeButton;
 import appeng.client.gui.widgets.GuiImgButton;
 import appeng.client.gui.widgets.GuiScrollbar;
 import appeng.client.gui.widgets.ISortSource;
 import appeng.client.gui.widgets.ITooltip;
+import appeng.client.gui.widgets.MEGuiTextField;
 import appeng.client.render.BlockPosHighlighter;
+import appeng.container.AEBaseContainer;
 import appeng.container.implementations.ContainerCraftingCPU;
 import appeng.core.AEConfig;
 import appeng.core.AELog;
+import appeng.core.localization.ButtonToolTips;
 import appeng.core.localization.GuiColors;
 import appeng.core.localization.GuiText;
 import appeng.core.localization.PlayerMessages;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketCraftingItemInterface;
 import appeng.core.sync.packets.PacketCraftingRemainingOperations;
+import appeng.core.sync.packets.PacketInventoryAction;
 import appeng.core.sync.packets.PacketValueConfig;
+import appeng.helpers.InventoryAction;
 import appeng.util.Platform;
 import appeng.util.ReadableNumberConverter;
 
@@ -90,6 +97,8 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
     protected IItemList<IAEItemStack> storage = AEApi.instance().storage().createItemList();
     protected IItemList<IAEItemStack> active = AEApi.instance().storage().createItemList();
     protected IItemList<IAEItemStack> pending = AEApi.instance().storage().createItemList();
+
+    private IAEItemStack hoveredAEStack = null;
 
     protected int rows = DISPLAYED_ROWS;
 
@@ -168,6 +177,13 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
     private final RemainingOperations remainingOperations = new RemainingOperations();
     private ItemStack hoveredStack;
     private ItemStack hoveredNbtStack;
+    private GuiAeButton findNext;
+    private GuiAeButton findPrev;
+    private GuiImgButton changeAllow;
+    private MEGuiTextField searchField;
+    private ArrayList<Integer> goToData = new ArrayList<>();
+    private int searchGotoIndex = -1;
+    private IAEItemStack needHighlight;
 
     public GuiCraftingCPU(final InventoryPlayer inventoryPlayer, final Object te) {
         this(new ContainerCraftingCPU(inventoryPlayer, te));
@@ -201,20 +217,31 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
             } catch (final IOException e) {
                 AELog.debug(e);
             }
-        }
-        if (this.toggleHideStored == btn) {
+        } else if (this.toggleHideStored == btn) {
             this.hideStored ^= true;
             AEConfig.instance.getConfigManager().putSetting(Settings.HIDE_STORED, hideStored ? YesNo.YES : YesNo.NO);
             this.toggleHideStored.set(hideStored ? YesNo.YES : YesNo.NO);
             hideStoredSorting();
             this.setScrollBar();
+            updateSearchGoToList(true);
+        } else if (btn == this.findNext) {
+            searchGoTo(true);
+        } else if (btn == this.findPrev) {
+            searchGoTo(false);
+        } else if (btn == this.changeAllow) {
+            String msg = String.valueOf(((CraftingAllow) this.changeAllow.getCurrentValue()).ordinal());
+            try {
+                NetworkHandler.instance.sendToServer(new PacketValueConfig("TileCrafting.Allow", msg));
+            } catch (final IOException e) {
+                AELog.debug(e);
+            }
         }
 
     }
 
     @Override
     protected void mouseClicked(final int xCoord, final int yCoord, final int btn) {
-        if (this.hoveredNbtStack != null && isShiftKeyDown()) {
+        if (isShiftKeyDown() && this.hoveredNbtStack != null) {
             NBTTagCompound data = Platform.openNbtData(this.hoveredNbtStack);
             // when using the highlight feature in the crafting GUI we want to show all the interfaces
             // that currently received items so the player can see if the items are processed properly
@@ -224,8 +251,16 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
                     PlayerMessages.InterfaceHighlighted.getName(),
                     PlayerMessages.InterfaceInOtherDim.getName());
             mc.thePlayer.closeScreen();
+        } else if (hoveredAEStack != null && btn == 2) {
+            ((AEBaseContainer) inventorySlots).setTargetStack(hoveredAEStack);
+            final PacketInventoryAction p = new PacketInventoryAction(
+                    InventoryAction.AUTO_CRAFT,
+                    inventorySlots.inventorySlots.size(),
+                    0);
+            NetworkHandler.instance.sendToServer(p);
         }
         super.mouseClicked(xCoord, yCoord, btn);
+        this.searchField.mouseClicked(xCoord, yCoord, btn);
     }
 
     @Override
@@ -246,6 +281,44 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
                 AEConfig.instance.getConfigManager().getSetting(Settings.HIDE_STORED));
         this.buttonList.add(this.toggleHideStored);
         this.buttonList.add(this.cancel);
+
+        this.searchField = new MEGuiTextField(52, 12, "Search") {
+
+            @Override
+            public void onTextChange(String oldText) {
+                super.onTextChange(oldText);
+                updateSearchGoToList(true);
+            }
+        };
+        this.searchField.x = this.guiLeft + this.xSize - 101;
+        this.searchField.y = this.guiTop + 5;
+
+        this.findPrev = new GuiAeButton(
+                0,
+                this.guiLeft + this.xSize - 48,
+                this.guiTop + 6,
+                10,
+                10,
+                "↑",
+                ButtonToolTips.SearchGotoPrev.getLocal());
+        this.buttonList.add(this.findPrev);
+
+        this.findNext = new GuiAeButton(
+                0,
+                this.guiLeft + this.xSize - 36,
+                this.guiTop + 6,
+                10,
+                10,
+                "↓",
+                ButtonToolTips.SearchGotoNext.getLocal());
+        this.buttonList.add(this.findNext);
+
+        this.changeAllow = new GuiImgButton(
+                this.guiLeft - 20,
+                this.guiTop + 2,
+                Settings.CRAFTING_ALLOW,
+                CraftingAllow.ALLOW_ALL);
+        this.buttonList.add(this.changeAllow);
     }
 
     private void setScrollBar() {
@@ -262,6 +335,7 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
     @Override
     public void drawScreen(final int mouseX, final int mouseY, final float btn) {
         this.cancel.enabled = !this.visual.isEmpty();
+        this.changeAllow.set(CraftingAllow.values()[this.craftingCpu.allow]);
 
         final int gx = (this.width - this.xSize) / 2;
         final int gy = (this.height - this.ySize) / 2;
@@ -292,6 +366,47 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
 
         this.handleTooltip(mouseX, mouseY, remainingOperations);
         super.drawScreen(mouseX, mouseY, btn);
+    }
+
+    private void updateSearchGoToList(boolean dropIndex) {
+        needHighlight = null;
+        goToData.clear();
+        if (this.searchField.getText().isEmpty()) return;
+        String s = this.searchField.getText().toLowerCase();
+        int visCount = 0;
+        for (IAEItemStack aeis : hideStored ? this.visualHiddenStored : this.visual) {
+            if (aeis != null && Platform.getItemDisplayName(aeis).toLowerCase().contains(s)) {
+                goToData.add(visCount);
+            }
+            visCount++;
+        }
+        if (dropIndex) {
+            searchGotoIndex = -1;
+            searchGoTo(true);
+        }
+    }
+
+    private void searchGoTo(boolean forward) {
+        String s = this.searchField.getText().toLowerCase();
+        if (s.isEmpty() || goToData.isEmpty()) return;
+        if (forward) {
+            searchGotoIndex++;
+            if (searchGotoIndex >= goToData.size()) searchGotoIndex = 0;
+        } else {
+            if (searchGotoIndex <= 0) searchGotoIndex = goToData.size();
+            searchGotoIndex--;
+        }
+
+        List<IAEItemStack> visualTemp;
+        if (this.hideStored) {
+            visualTemp = this.visualHiddenStored;
+        } else {
+            visualTemp = this.visual;
+        }
+
+        IAEItemStack aeis = visualTemp.get(goToData.get(searchGotoIndex));
+        this.getScrollBar().setCurrentScroll(goToData.get(searchGotoIndex) / 3 - this.rows / 2);
+        needHighlight = aeis.copy();
     }
 
     private void updateRemainingOperations() {
@@ -326,7 +441,7 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
         updateRemainingOperations();
         this.fontRendererObj.drawString(
                 String.valueOf(remainingOperations.getRemainingOperations()),
-                TITLE_LEFT_OFFSET + 200 - this.remainingOperations.getStringWidth(),
+                TITLE_LEFT_OFFSET + 128 - this.remainingOperations.getStringWidth(),
                 TITLE_TOP_OFFSET,
                 GuiColors.CraftingCPUTitle.getColor());
 
@@ -424,6 +539,7 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
                             GuiColors.CraftingCPUAmount.getColor());
 
                     if (this.tooltip == z - viewStart) {
+                        hoveredAEStack = refStack;
                         lineList.add(
                                 GuiText.Crafting.getLocal() + ": "
                                         + NumberFormat.getInstance().format(activeStack.getStackSize()));
@@ -472,6 +588,18 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
                 }
 
                 this.drawItem(posX, posY, is);
+
+                if (!this.searchField.getText().isEmpty() && goToData.contains(z)) {
+                    final int startX = x * (1 + SECTION_LENGTH) + ITEMSTACK_LEFT_OFFSET;
+                    final int startY = posY - 4;
+                    final int color = needHighlight != null && needHighlight.isSameType(refStack)
+                            ? GuiColors.SearchGoToHighlight.getColor()
+                            : GuiColors.SearchHighlight.getColor();
+                    drawVerticalLine(startX, startY, startY + offY, color);
+                    drawVerticalLine(startX + SECTION_LENGTH - 1, startY, startY + offY, color);
+                    drawHorizontalLine(startX + 1, startX + SECTION_LENGTH - 2, startY + 1, color);
+                    drawHorizontalLine(startX + 1, startX + SECTION_LENGTH - 2, startY + offY - 1, color);
+                }
 
                 x++;
 
@@ -524,6 +652,20 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
     public void drawBG(final int offsetX, final int offsetY, final int mouseX, final int mouseY) {
         this.bindTexture("guis/craftingcpu.png");
         this.drawTexturedModalRect(offsetX, offsetY, 0, 0, this.xSize, this.ySize);
+        drawSearch();
+    }
+
+    public void drawSearch() {
+        this.bindTexture("guis/searchField.png");
+        this.drawTexturedModalRect(this.guiLeft + this.xSize - 101, this.guiTop + 5, 0, 0, 52, 12);
+        this.searchField.drawTextBox();
+    }
+
+    @Override
+    protected void keyTyped(final char character, final int key) {
+        if (!(this.searchField.textboxKeyTyped(character, key))) {
+            super.keyTyped(character, key);
+        }
     }
 
     public void postUpdate(IAEItemStack is) {
@@ -565,6 +707,7 @@ public class GuiCraftingCPU extends AEBaseGui implements ISortSource, IGuiToolti
         }
 
         if (this.hideStored) this.hideStoredSorting();
+        updateSearchGoToList(false);
         this.setScrollBar();
     }
 

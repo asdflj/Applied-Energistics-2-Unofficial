@@ -5,6 +5,7 @@ tile.appliedenergistics2.BlockCharger.name=Charger
 tile.appliedenergistics2.BlockChest.name=ME Chest
 tile.appliedenergistics2.BlockCondenser.name=Matter Condenser
 tile.appliedenergistics2.BlockController.name=ME Controller
+tile.appliedenergistics2.BlockCreativeEnergyController.name=ME Self Powered Controller
 tile.appliedenergistics2.BlockCrank.name=Wooden Crank
 tile.appliedenergistics2.BlockCreativeEnergyCell.name=Creative Energy Cell
 tile.appliedenergistics2.BlockDenseEnergyCell.name=Dense Energy Cell
@@ -126,8 +127,8 @@ chat.appliedenergistics2.FBOUnsupported=OpenGL FBOs not supported, cannot export
 chat.appliedenergistics2.PriorityInvalidTarget=Target has no priority
 chat.appliedenergistics2.PriorityReadout=Current priority is %d
 chat.appliedenergistics2.PriorityConfigured=Updated priority to %d
-chat.appliedenergistics2.DriveLocked=Digital Singularity cells in drive were locked to the current item on them
-chat.appliedenergistics2.ChestLocked=Digital Singularity cell in chest was locked to the current item on it
+chat.appliedenergistics2.DriveLockingToggled=Cells in drive were partitioned/unpartitioned
+chat.appliedenergistics2.ChestLockingToggled=Cell in chest was partitioned/unpartitioned
 chat.appliedenergistics2.FinishCraftingRemind=Crafting of %s * %s finished in %s.
 chat.appliedenergistics2.CraftingCantExtract=Can't extract required amount of ingredient from storage: %d / %d | %s
 
@@ -265,7 +266,7 @@ gui.appliedenergistics2.ETAFormat=HH:mm:ss
 gui.appliedenergistics2.SwitchCraftingSimulationDisplayMode=Switch display mode (List/Tree)
 gui.appliedenergistics2.Crafting=Crafting
 gui.appliedenergistics2.Scheduled=Scheduled
-gui.appliedenergistics2.CraftingStatus=Crafting Status
+gui.appliedenergistics2.CraftingStatus=Status
 gui.appliedenergistics2.RemainingOperations=Idle Processors
 gui.appliedenergistics2.FromStorage=Available
 gui.appliedenergistics2.FromStoragePercent=Used
@@ -279,6 +280,7 @@ gui.appliedenergistics2.Merge=Merge
 gui.appliedenergistics2.Missing=Missing
 gui.appliedenergistics2.NoCraftingTreeReceived=No crafting tree received
 gui.appliedenergistics2.CraftingStepLimitExceeded=Crafting step limit exceeded
+gui.appliedenergistics2.CraftingSizeLimitExceeded=Crafting size limit exceeded
 gui.appliedenergistics2.RequestedItem=Requested item
 gui.appliedenergistics2.SimulationIncomplete=Simulation incomplete
 gui.appliedenergistics2.Bytes=Storage
@@ -357,6 +359,9 @@ gui.color.appliedenergistics2.CraftConfirmMissingItem=1AFF0000
 gui.color.appliedenergistics2.CraftingCPUActive=5A45A021
 gui.color.appliedenergistics2.CraftingCPUScheduled=FF787878
 gui.color.appliedenergistics2.InterfaceTerminalMatch=2A00FF00
+gui.color.appliedenergistics2.ProcessBarStartColor=FFE60A00
+gui.color.appliedenergistics2.ProcessBarMiddleColor=FFE6E600
+gui.color.appliedenergistics2.ProcessBarEndColor=FF0AE600
 
 # GUI Tooltips
 gui.tooltips.appliedenergistics2.Stash=Store Items
@@ -561,6 +566,15 @@ gui.tooltips.appliedenergistics2.StringOrderNatural=Default
 gui.tooltips.appliedenergistics2.StringOrderAlphanum=Natural Order
 gui.tooltips.appliedenergistics2.CellRestrictionLabel=Cell Restriction
 gui.tooltips.appliedenergistics2.CellRestrictionHint=Setup Cell Restriction
+
+gui.tooltips.appliedenergistics2.SearchGotoNext=Find next
+gui.tooltips.appliedenergistics2.SearchGotoPrev=Find prev
+
+gui.tooltips.appliedenergistics2.CPUAllowMode=Crafting requests limitation
+gui.tooltips.appliedenergistics2.CPUAllowAllDesc=Allow all crafting requests
+gui.tooltips.appliedenergistics2.CPUOnlyAllowPlayerDesc=Only allow crafting requests from player
+gui.tooltips.appliedenergistics2.CPUOnlyAllowNonPlayerDesc=Only allow crafting requests from non-player
+
 # Units
 gui.appliedenergistics2.units.appliedenergstics=AE
 gui.appliedenergistics2.units.ic2=Energy Units
@@ -733,6 +747,7 @@ item.appliedenergistics2.ItemPart.CableDense.name=ME Dense Smart Cable
 item.appliedenergistics2.ItemPart.CableDenseCovered.name=ME Dense Covered Cable
 item.appliedenergistics2.ItemPart.StorageMonitor.name=ME Storage Monitor
 item.appliedenergistics2.ItemPart.ConversionMonitor.name=ME Conversion Monitor
+item.appliedenergistics2.ItemPart.ThroughputMonitor.name=ME Throughput Monitor
 item.appliedenergistics2.ItemPart.SemiDarkMonitor.name=Illuminated Panel
 item.appliedenergistics2.ItemPart.Monitor.name=Bright Illuminated Panel
 item.appliedenergistics2.ItemPart.DarkMonitor.name=Dark Illuminated Panel

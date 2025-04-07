@@ -1,7 +1,6 @@
 package appeng.client.gui.implementations;
 
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 
@@ -9,9 +8,9 @@ import org.lwjgl.input.Keyboard;
 
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.widgets.GuiTabButton;
+import appeng.client.gui.widgets.MEGuiTextField;
 import appeng.container.AEBaseContainer;
 import appeng.core.AEConfig;
-import appeng.core.localization.GuiColors;
 import appeng.core.localization.GuiText;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.NetworkHandler;
@@ -22,7 +21,7 @@ import appeng.util.calculators.Calculator;
 
 public abstract class GuiAmount extends AEBaseGui {
 
-    protected GuiTextField amountTextField;
+    protected MEGuiTextField amountTextField;
     protected GuiTabButton originalGuiBtn;
 
     protected GuiButton nextBtn;
@@ -80,16 +79,10 @@ public abstract class GuiAmount extends AEBaseGui {
                             itemRender));
         }
 
-        this.amountTextField = new GuiTextField(
-                this.fontRendererObj,
-                this.guiLeft + 62,
-                this.guiTop + 57,
-                59,
-                this.fontRendererObj.FONT_HEIGHT);
-        this.amountTextField.setEnableBackgroundDrawing(false);
+        this.amountTextField = new MEGuiTextField(61, 12);
+        this.amountTextField.x = this.guiLeft + 60;
+        this.amountTextField.y = this.guiTop + 55;
         this.amountTextField.setMaxStringLength(16);
-        this.amountTextField.setTextColor(GuiColors.CraftAmountToCraft.getColor());
-        this.amountTextField.setVisible(true);
         this.amountTextField.setFocused(true);
     }
 
@@ -117,6 +110,12 @@ public abstract class GuiAmount extends AEBaseGui {
     }
 
     @Override
+    protected void mouseClicked(int xCoord, int yCoord, int btn) {
+        super.mouseClicked(xCoord, yCoord, btn);
+        this.amountTextField.mouseClickedNoFocusDrop(xCoord, yCoord, btn);
+    }
+
+    @Override
     protected void actionPerformed(final GuiButton btn) {
         super.actionPerformed(btn);
         if (btn == this.originalGuiBtn) {
@@ -129,23 +128,23 @@ public abstract class GuiAmount extends AEBaseGui {
                 || btn == this.minus1000;
 
         if (isPlus || isMinus) {
-            int resultI = addOrderAmount(this.getQty(btn));
-            this.amountTextField.setText(Integer.toString(resultI));
+            long resultI = addOrderAmount(this.getQty(btn));
+            this.amountTextField.setText(Long.toString(resultI));
         }
     }
 
-    protected int addOrderAmount(final int i) {
-        int resultI = getAmount();
+    protected long addOrderAmount(final int i) {
+        long resultL = getAmountLong();
 
-        if (resultI == 1 && i > 1) {
-            resultI = 0;
+        if (resultL == 1 && i > 1) {
+            resultL = 0;
         }
 
-        resultI += i;
-        if (resultI < 1) {
-            resultI = 1;
+        resultL += i;
+        if (resultL < 1) {
+            resultL = 1;
         }
-        return resultI;
+        return resultL;
     }
 
     protected int getAmount() {
@@ -156,6 +155,17 @@ public abstract class GuiAmount extends AEBaseGui {
             return 0;
         } else {
             return (int) ArithHelper.round(resultD, 0);
+        }
+    }
+
+    protected long getAmountLong() {
+        String out = this.amountTextField.getText();
+        double resultD = Calculator.conversion(out);
+
+        if (resultD <= 0 || Double.isNaN(resultD)) {
+            return 0;
+        } else {
+            return (long) ArithHelper.round(resultD, 0);
         }
     }
 

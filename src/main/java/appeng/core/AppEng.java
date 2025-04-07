@@ -34,6 +34,7 @@ import appeng.server.AECommand;
 import appeng.services.export.ExportConfig;
 import appeng.services.export.ExportProcess;
 import appeng.services.export.ForgeExportConfig;
+import appeng.util.InvTweakSortingModule;
 import appeng.util.Platform;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Loader;
@@ -75,7 +76,7 @@ public final class AppEng {
                     + '.' // revisionVersion
                     + net.minecraftforge.common.ForgeVersion.buildVersion
                     + ",);" // buildVersion
-                    + "required-after:gtnhlib@[0.3.3,)"; // require gtnhlib
+                    + "required-after:gtnhlib@[0.6.11,)"; // require gtnhlib
 
     @Nonnull
     private static final AppEng INSTANCE = new AppEng();
@@ -169,6 +170,8 @@ public final class AppEng {
 
             this.startService("AE2 CSV Export", exportProcessThread);
         }
+
+        if (Platform.isClient()) InvTweakSortingModule.init();
 
         this.registration.initialize(event, this.recipeDirectory, this.customRecipeConfig);
         IntegrationRegistry.INSTANCE.init();
